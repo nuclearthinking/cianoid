@@ -87,9 +87,8 @@ def main():
         func=increment_counter,
         trigger=CronTrigger(
             start_date=datetime.datetime.now(),
-            second=0,
+            second='0',
             minute='0',
-            hour='0'
         ),
         max_instances=1
     )
