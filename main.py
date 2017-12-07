@@ -6,7 +6,7 @@ import jinja2
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from peewee import SqliteDatabase, Model, PrimaryKeyField, CharField, IntegerField
+from peewee import SqliteDatabase, Model, PrimaryKeyField, CharField, IntegerField, DateTimeField
 from tornado import httpclient, ioloop
 from tornado import web
 from tornado.options import define, options
@@ -27,6 +27,16 @@ class Counter(Model):
     id = PrimaryKeyField()
     name = CharField(unique=True, null=False)
     counter = IntegerField(null=True)
+
+    class Meta:
+        database = db
+
+
+class UpTimeHighScore(Model):
+    id = PrimaryKeyField()
+    count = IntegerField(null=True)
+    date_from = DateTimeField(null=True)
+    date_to = DateTimeField(null=True)
 
     class Meta:
         database = db
@@ -54,8 +64,11 @@ def increment_counter():
 def erase_counter():
     if is_counter_exist():
         counter = Counter.select().where(Counter.id == 1).peek(1)
+        current_value = counter.counter
         counter.counter = 0
         counter.save()
+        UpTimeHighScore.create(count=current_value, date_to=datetime.datetime.now(),
+                               date_from=datetime.datetime.now() - datetime.timedelta(hours=current_value))
 
 
 class AloneHandler(RequestHandler):
@@ -68,8 +81,8 @@ class AloneHandler(RequestHandler):
             days_count = 0
         days_str = '0' * (4 - len(str(days_count))) + str(days_count)
         q, w, e, r = days_str
-
-        self.render('count.html', one=q, two=w, three=e, four=r)
+        highscores = UpTimeHighScore.select().order_by(UpTimeHighScore.count.desc()).first(5)
+        self.render('count.html', one=q, two=w, three=e, four=r, high=highscores)
 
 
 def is_counter_exist():
