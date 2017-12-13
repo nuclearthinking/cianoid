@@ -6,7 +6,7 @@ import jinja2
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from peewee import SqliteDatabase, Model, PrimaryKeyField, CharField, IntegerField
+from peewee import SqliteDatabase, Model, PrimaryKeyField, CharField, IntegerField, DateTimeField
 from tornado import httpclient, ioloop
 from tornado import web
 from tornado.options import define, options
@@ -27,6 +27,15 @@ class Counter(Model):
     id = PrimaryKeyField()
     name = CharField(unique=True, null=False)
     counter = IntegerField(null=True)
+
+    class Meta:
+        database = db
+
+
+class History(Model):
+    id = PrimaryKeyField()
+    score = IntegerField()
+    date = DateTimeField()
 
     class Meta:
         database = db
@@ -54,6 +63,7 @@ def increment_counter():
 def erase_counter():
     if is_counter_exist():
         counter = Counter.select().where(Counter.id == 1).peek(1)
+        History.create(score=counter.counter, date=datetime.datetime.now())
         counter.counter = 0
         counter.save()
 
@@ -68,8 +78,13 @@ class AloneHandler(RequestHandler):
             days_count = 0
         days_str = '0' * (4 - len(str(days_count))) + str(days_count)
         q, w, e, r = days_str
-
-        self.render('count.html', one=q, two=w, three=e, four=r)
+        top10 = None
+        if History.select().exists():
+            top10 = History.select().order_by(History.score.desc()).first(10)
+            for item in top10:
+                date = item.date
+                item.date = date.strftime('%d %B %Y %H:%M')
+        self.render('count.html', one=q, two=w, three=e, four=r, top10=top10)
 
 
 def is_counter_exist():
@@ -80,7 +95,7 @@ def is_counter_exist():
 
 
 def main():
-    db.create_tables([Counter], safe=True)
+    db.create_tables([Counter, History], safe=True)
     logging.basicConfig(level=DEBUG)
     scheduler = BackgroundScheduler()
     scheduler.add_job(
