@@ -63,7 +63,8 @@ def increment_counter():
 def erase_counter():
     if is_counter_exist():
         counter = Counter.select().where(Counter.id == 1).peek(1)
-        History.create(score=counter.counter, date=datetime.datetime.now())
+        if counter.counter != 0:
+            History.create(score=counter.counter, date=datetime.datetime.now())
         counter.counter = 0
         counter.save()
 
