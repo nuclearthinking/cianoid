@@ -80,7 +80,7 @@ class AloneHandler(RequestHandler):
         q, w, e, r = days_str
         top10 = None
         if History.select().exists():
-            top10 = History.select().order_by(History.score.desc()).first(10)
+            top10 = History.select().order_by(History.score.desc()).first(8)
             for item in top10:
                 date = item.date
                 item.date = date.strftime('%d %B %Y %H:%M')
