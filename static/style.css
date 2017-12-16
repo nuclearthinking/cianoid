@@ -5,6 +5,12 @@
     color: white;
 }
 
+.highscore {
+    font-family: FreeMono, monospace;
+    font-size: x-large;
+    color: white;
+}
+
 .header {
     font-family: FreeMono, monospace;
     font-size: 40px;

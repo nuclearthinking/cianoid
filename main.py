@@ -32,11 +32,10 @@ class Counter(Model):
         database = db
 
 
-class UpTimeHighScore(Model):
+class History(Model):
     id = PrimaryKeyField()
-    count = IntegerField(null=True)
-    date_from = DateTimeField(null=True)
-    date_to = DateTimeField(null=True)
+    score = IntegerField()
+    date = DateTimeField()
 
     class Meta:
         database = db
@@ -64,11 +63,10 @@ def increment_counter():
 def erase_counter():
     if is_counter_exist():
         counter = Counter.select().where(Counter.id == 1).peek(1)
-        current_value = counter.counter
+        if counter.counter != 0:
+            History.create(score=counter.counter, date=datetime.datetime.now())
         counter.counter = 0
         counter.save()
-        UpTimeHighScore.create(count=current_value, date_to=datetime.datetime.now(),
-                               date_from=datetime.datetime.now() - datetime.timedelta(hours=current_value))
 
 
 class AloneHandler(RequestHandler):
@@ -81,8 +79,13 @@ class AloneHandler(RequestHandler):
             days_count = 0
         days_str = '0' * (4 - len(str(days_count))) + str(days_count)
         q, w, e, r = days_str
-        highscores = UpTimeHighScore.select().order_by(UpTimeHighScore.count.desc()).first(5)
-        self.render('count.html', one=q, two=w, three=e, four=r, high=highscores)
+        top10 = None
+        if History.select().exists():
+            top10 = History.select().order_by(History.score.desc()).first(8)
+            for item in top10:
+                date = item.date
+                item.date = date.strftime('%d %B %Y %H:%M')
+        self.render('count.html', one=q, two=w, three=e, four=r, top10=top10)
 
 
 def is_counter_exist():
@@ -93,7 +96,7 @@ def is_counter_exist():
 
 
 def main():
-    db.create_tables([Counter], safe=True)
+    db.create_tables([Counter, History], safe=True)
     logging.basicConfig(level=DEBUG)
     scheduler = BackgroundScheduler()
     scheduler.add_job(
