@@ -43,7 +43,13 @@ class History(Model):
 
 def check_cian():
     try:
-        response = httpclient.HTTPClient().fetch('https://www.cian.ru/')
+        urls = ['https://www.cian.ru/',
+                'https://www.cian.ru/snyat/',
+                'https://www.cian.ru/kupit/',
+                'https://www.cian.ru/commercial/',
+                'https://www.cian.ru/posutochno/',
+                'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&region=1&room1=1&room2=1']
+        [httpclient.HTTPClient().fetch(url) for url in urls]
     except httpclient.HTTPError as e:
         if e.response.code >= 400:
             erase_counter()
