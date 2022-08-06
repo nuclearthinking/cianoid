@@ -95,10 +95,7 @@ class AloneHandler(RequestHandler):
 
 
 def is_counter_exist():
-    if Counter.select().where(Counter.id == 1).first(1):
-        return True
-    else:
-        return False
+    return bool(Counter.select().where(Counter.id == 1).first(1))
 
 
 def main():
